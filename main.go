@@ -97,6 +97,11 @@ type Sizer interface {
 	Size() int64
 }
 
+type accountDetails struct {
+	AccountName string `json: "AccountName"`
+	AccountKey  string `json: "AccountKey"`
+}
+
 func getTitle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -113,8 +118,8 @@ func fileUpload(w http.ResponseWriter, r *http.Request) {
 	byteContainer := make([]byte, size)
 
 	file.Read(byteContainer)
-
-	f, err := os.Create("/usr/share/app/" + fileHeader.Filename)
+	// "/D:AKS/" +
+	f, err := os.Create("/usr/share/" + fileHeader.Filename)
 
 	if err != nil {
 		log.Fatal(err)
@@ -162,11 +167,15 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err1)
 	}
 	res, err1 := stmt.Exec(userData.Email, userData.Password, userData.Username)
+	if err1 == nil {
+		log.Println(err1)
+	}
 	fmt.Println("res=  -====-=-=-=-=-=-=", res)
 
 	var statusData StatusData
 
 	statusData.StatusData = "success"
+	fmt.Print("Status data : ", statusData.StatusData)
 
 	json.NewEncoder(w).Encode(statusData)
 
@@ -238,16 +247,18 @@ func login(w http.ResponseWriter, r *http.Request) {
 var Sqldb *sql.DB
 
 func sqlDB() *sql.DB {
-	var server = "akswebappdb21.mysql.database.azure.com"
+	var server = "akswebappdb12.mysql.database.azure.com"
 	// var port = 3306
 
 	var database = "usertable"
-	var user = "dbadminuser@akswebappdb21"
-	var password = "Maxmin@321"
+	var user = "admin123@akswebappdb12"
+	var password = "Admin@123"
 	// var user = os.Getenv("DB_USERNAME")
 	// var password = os.Getenv("DB_PASSWORD")
 	connString := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?allowNativePasswords=true", user, password, server, database)
-
+	// akswebappdb12.mysql.database.azure.com
+	// admin123@akswebappdb12
+	// kubectl run -it --rm --image=mysql:5.7.22 --restart=Never mysql-client -- mysql -h akswebappdb12.mysql.database.azure.com -u admin123@akswebappdb12 -pAdmin@123
 	var err error
 
 	// Create connection pool
@@ -256,16 +267,24 @@ func sqlDB() *sql.DB {
 		log.Fatal("Error creating connection pool: ", err.Error())
 	}
 	if Sqldb != nil {
-		fmt.Printf("Connected!\n")
+		fmt.Printf("Connected inside sql!\n")
 	}
-
 	return Sqldb
-
 }
 
 func accountInfo() (string, string) {
-	return os.Getenv("ACCOUNT_NAME"), os.Getenv("ACCOUNT_KEY")
-	// return "fc29f08dfb238435fbcf4ec", "RayUPDk/VRZ80/2OheDHJWZg76htfobGy5Me2PpsNOKh5m4+Glh0PNNem/YbZ0MRNtUMbxtG7VE6g/hByq9JdQ=="
+	var accountInfo accountDetails
+	response, err := http.Get("http://20.207.73.36:8000/")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(accountInfo.AccountName)
+	fmt.Println(accountInfo.AccountKey)
+
+	_ = json.NewDecoder(response.Body).Decode(&accountInfo)
+
+	return accountInfo.AccountName, accountInfo.AccountKey
+
 }
 
 func getFileURL(fileName string) string {
@@ -276,58 +295,10 @@ func getFileURL(fileName string) string {
 		log.Fatal(err)
 	}
 
-	u, _ := url.Parse(fmt.Sprintf("https://%s.file.core.windows.net/kubernetes-dynamic-pvc-7853f4b1-0047-4270-a19e-bc97e2d4ccb6/%s", accountName, fileName))
-	vars := fmt.Sprintf("https://%s.file.core.windows.net/kubernetes-dynamic-pvc-7853f4b1-0047-4270-a19e-bc97e2d4ccb6/%s", accountName, fileName)
+	u, _ := url.Parse(fmt.Sprintf("https://%s.file.core.windows.net/kubernetes-dynamic-pvc-e2005596-46e5-4944-8dc1-92650b3d10c8/%s", accountName, fileName))
+	vars := fmt.Sprintf("https://%s.file.core.windows.net/kubernetes-dynamic-pvc-e2005596-46e5-4944-8dc1-92650b3d10c8/%s", accountName, fileName)
 	fileURL := azfile.NewFileURL(*u, azfile.NewPipeline(credential, azfile.PipelineOptions{}))
 
 	fmt.Println("File URL: ", fileURL)
 	return vars
 }
-
-// func main1(file *os.File) string {
-// 	//file, err := os.Open("BigFile.bin") // Open the file we want to upload (we assume the file already exists).
-// 	// file, err := os.Create("Sample.txt")
-// 	// fmt.Println(file.Name())
-
-// 	defer file.Close()
-// 	fileSize, err := file.Stat() // Get the size of the file (stream)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	// From the Azure portal, get your Storage account file service URL endpoint.
-// 	accountName, accountKey := accountInfo()
-// 	credential, err := azfile.NewSharedKeyCredential(accountName, accountKey)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	// Create a FileURL object to a file in the share (we assume the share already exists).
-// 	//https://%s.file.core.windows.net/kubernetes-dynamic-pvc-7853f4b1-0047-4270-a19e-bc97e2d4ccb6/%s
-// 	u, _ := url.Parse(fmt.Sprintf("https://%s.file.core.windows.net/myshare/%s", accountName, file.Name()))
-// 	vars := fmt.Sprintf("https://%s.file.core.windows.net/myshare/%s", accountName, file.Name())
-// 	fileURL := azfile.NewFileURL(*u, azfile.NewPipeline(credential, azfile.PipelineOptions{}))
-
-// 	ctx := context.Background() // This example uses a never-expiring context
-
-// 	// Trigger parallel upload with Parallelism set to 3. Note if there is an Azure file
-// 	// with same name exists, UploadFileToAzureFile will overwrite the existing Azure file with new content,
-// 	// and set specified azfile.FileHTTPHeaders and Metadata.
-// 	err = azfile.UploadFileToAzureFile(ctx, file, fileURL,
-// 		azfile.UploadToAzureFileOptions{
-// 			Parallelism: 3,
-// 			FileHTTPHeaders: azfile.FileHTTPHeaders{
-// 				CacheControl: "no-transform",
-// 			},
-// 			Metadata: azfile.Metadata{
-// 				"createdby": "ananth&gokul",
-// 			},
-// 			// If Progress is non-nil, this function is called periodically as bytes are uploaded.
-// 			Progress: func(bytesTransferred int64) {
-// 				fmt.Printf("Uploaded %d of %d bytes.\n", bytesTransferred, fileSize.Size())
-// 			},
-// 		})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	return vars
-// }
