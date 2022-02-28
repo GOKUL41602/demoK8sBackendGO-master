@@ -97,9 +97,9 @@ type Sizer interface {
 	Size() int64
 }
 
-type accountDetails struct {
-	AccountName string `json: "AccountName"`
-	AccountKey  string `json: "AccountKey"`
+type accountName struct {
+	Name string `json: "AccountName"`
+	Key  string `json: "AccountKey"`
 }
 
 func getTitle(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +251,8 @@ func sqlDB() *sql.DB {
 	// var port = 3306
 
 	var database = "usertable"
-// 	var user = "dbadminuser@akswebappdb21"
-// 	var password = "Maxmin@321"
+	// 	var user = "dbadminuser@akswebappdb21"
+	// 	var password = "Maxmin@321"
 	var user = os.Getenv("DB_USERNAME")
 	var password = os.Getenv("DB_PASSWORD")
 	connString := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?allowNativePasswords=true", user, password, server, database)
@@ -271,19 +271,20 @@ func sqlDB() *sql.DB {
 	}
 	return Sqldb
 }
+// http://azure-files-app-service.default.svc.cluster.local:3000/api/title
 
 func accountInfo() (string, string) {
-	var accountInfo accountDetails
-	response, err := http.Get("http://20.207.73.36:8000/")
+	var accountInfo accountName
+	response, err := http.Get("http://getaccountapiinfo-app-service.default.svc.cluster.local:8080/")
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(accountInfo.AccountName)
-	fmt.Println(accountInfo.AccountKey)
+	fmt.Println("Name : " + accountInfo.Name)
+	fmt.Println("Key : " + accountInfo.Key)
 
 	_ = json.NewDecoder(response.Body).Decode(&accountInfo)
 
-	return accountInfo.AccountName, accountInfo.AccountKey
+	return accountInfo.Name, accountInfo.Key
 
 }
 
