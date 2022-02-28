@@ -253,8 +253,8 @@ func sqlDB() *sql.DB {
 	var database = "usertable"
 	// 	var user = "dbadminuser@akswebappdb21"
 	// 	var password = "Maxmin@321"
-	var user = os.Getenv("DB_USERNAME")
-	var password = os.Getenv("DB_PASSWORD")
+	// var user = os.Getenv("DB_USERNAME")
+	// var password = os.Getenv("DB_PASSWORD")
 	connString := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?allowNativePasswords=true", user, password, server, database)
 	// akswebappdb12.mysql.database.azure.com
 	// admin123@akswebappdb12
